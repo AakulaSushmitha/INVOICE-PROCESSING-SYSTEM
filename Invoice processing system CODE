@@ -1,0 +1,246 @@
+import { useState, useEffect } from "react";
+import Header from '../components/Header';
+import { Box, Typography, Button } from '@mui/material';
+import Invoices from '../components/Invoices';
+import AddInvoice from "../components/AddInvoice";
+import { getAllInvoices, deleteInvoice } from "../services/api";
+
+const Home = () => {
+    const [invoices, setInvoices] = useState([]);
+    const [addInvoice, setAddInvoice] = useState(false);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await getAllInvoices();
+                if (response && response.data) {
+                    setInvoices(response.data);
+                } else {
+                    console.error("Invalid response format:", response);
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
+        fetchData();
+    }, [addInvoice]);
+    
+
+    const handleRemoveInvoice = async (id) => {
+        try {
+            await deleteInvoice(id);
+            const updatedInvoices = invoices.filter(invoice => invoice.id !== id);
+            setInvoices(updatedInvoices);
+        } catch (error) {
+            console.error("Error removing invoice:", error);
+        }
+    };
+
+    const handleToggleInvoice = () => {
+        setAddInvoice(prevState => !prevState);
+    };
+
+    return (
+        <>
+            <Header />
+            <Box style={{ margin: 20 }}>
+                <Typography variant="h4">Pending Invoices</Typography>
+                {!addInvoice && 
+                    <Button 
+                        variant="contained" 
+                        onClick={handleToggleInvoice}
+                        style={{ marginTop: 15 }}
+                    >
+                        Add Invoice
+                    </Button>
+                }
+                {addInvoice && <AddInvoice setAddInvoice={setAddInvoice} />}
+                <Box>
+                    <Invoices 
+                        removeInvoice={handleRemoveInvoice}
+                        invoices={invoices}
+                    />
+                </Box>
+            </Box>
+        </>
+    );
+};
+
+export default Home;
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+import Home from './pages/Home';
+
+function App() {
+  return (
+    <Home />
+  );
+}
+
+export default App;
+port { render, screen } from '@testing-library/react';
+import App from './App';
+
+test('renders learn react link', () => {
+  render(<App />);
+  const linkElement = screen.getByText(/learn react/i);
+  expect(linkElement).toBeInTheDocument();
+});
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. 
+const reportWebVitals = onPerfEntry => {
+  if (onPerfEntry && onPerfEntry instanceof Function) {
+    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+      getCLS(onPerfEntry);
+      getFID(onPerfEntry);
+      getFCP(onPerfEntry);
+      getLCP(onPerfEntry);
+      getTTFB(onPerfEntry);
+    });
+  }
+};
+export default reportWebVitals;
+import { useState } from "react";
+import { TextField, Typography, Box, Button, styled } from "@mui/material";
+import { saveInvoice } from "../services/api";
+
+const Component = styled(Box)({
+    marginTop: 20,
+    '& > p': {
+        fontSize: 26,
+        marginBottom: 10
+    },
+    '& > div > div': {
+        marginRight: 20,
+        minWidth: 200
+    }
+})
+
+const defaultObj = {
+    vendor: '',
+    product: '',
+    amount: 0,
+    date: '',
+    action: 'pending'
+}
+
+const AddInvoice = ({ setAddInvoice }) => {
+    const [invoice, setInvoice] = useState(defaultObj);
+
+    const onValueChange = (e) => {
+        setInvoice({ ...invoice, [e.target.name]: e.target.value })
+    }
+
+    const addNewInvoice = async () => {
+        await saveInvoice({ ...invoice, amount: Number(invoice['amount']) });
+
+        setAddInvoice(false);
+    }
+
+    return (
+        <Component>
+            <Typography>Add Invoice</Typography>
+            <Box>
+                <TextField 
+                    name="vendor"
+                    variant="standard"
+                    placeholder="Enter vendor name"
+                    onChange={(e) => onValueChange(e)}
+                    autoComplete="off"
+                />
+                <TextField 
+                    name="product"
+                    variant="standard"
+                    placeholder="Enter product name"
+                    onChange={(e) => onValueChange(e)}
+                    autoComplete="off"
+                />
+                <TextField 
+                    name="amount"
+                    variant="standard"
+                    placeholder="Enter amount (in Rs)"
+                    onChange={(e) => onValueChange(e)}
+                    type="number"
+                    autoComplete="off"
+                />
+                <TextField 
+                    name="date"
+                    variant="standard"
+                    placeholder="Enter date"
+                    onChange={(e) => onValueChange(e)}
+                    type="date"
+                    autoComplete="off"
+                />
+                <Button
+                    variant="contained"
+                    onClick={() => addNewInvoice() }
+                >Add Invoice</Button>
+            </Box>
+        </Component>
+    )
+}
+
+export default AddInvoice;
